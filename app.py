@@ -9,7 +9,39 @@ from secrets import api_auth_token, jwt_secret_key
 from utils import parse_date_time
 from business import get_user_by_email
 
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String, Float
+import os
+
 app = Flask(__name__)
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'upc_api.db')
+
+db = SQLAlchemy(app)
+
+
+# ######  CLI DATABASE COMMANDS  ######
+@app.cli.command('db_create')
+def db_create():
+    db.create_all()
+    print('Database created!')
+
+
+@app.cli.command('db_drop')
+def db_drop():
+    db.drop_all()
+    print('Database dropped!')
+
+
+@app.cli.command('db_seed')
+def db_seed():
+    test_user = User(name='Odie',
+                     email='odie@test.com',
+                     password='p^assword')
+
+    db.session.add(test_user)
+    db.session.commit()
+    print('Database seeded!')
 
 
 def decode_auth_token(auth_token):
@@ -100,6 +132,15 @@ def widgets():
             }
         ]
     }
+
+
+# ######  MODELS  ######
+class User(db.Model):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    email = Column(String, unique=True)
+    password = Column(String)
 
 
 if __name__ == '__main__':
